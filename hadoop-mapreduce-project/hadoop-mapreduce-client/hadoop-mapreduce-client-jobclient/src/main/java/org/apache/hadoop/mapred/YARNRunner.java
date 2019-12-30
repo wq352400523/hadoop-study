@@ -104,6 +104,9 @@ import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class enables the current JobClient (0.22 hadoop) to run on YARN.
+ *
+ * 集群模式下，完成任务提交等
+ * 本地模式：{@link org.apache.hadoop.mapred.LocalJobRunner}
  */
 @SuppressWarnings("unchecked")
 public class YARNRunner implements ClientProtocol {

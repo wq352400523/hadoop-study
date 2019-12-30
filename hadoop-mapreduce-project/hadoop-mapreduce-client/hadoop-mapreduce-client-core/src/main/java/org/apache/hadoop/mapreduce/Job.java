@@ -1563,13 +1563,23 @@ public class Job extends JobContextImpl implements JobContext, AutoCloseable {
    * Submit the job to the cluster and return immediately.
    * @throws IOException
    */
-  public void submit() 
+  public void submit()
          throws IOException, InterruptedException, ClassNotFoundException {
     ensureState(JobState.DEFINE);
     setUseNewAPI();
+    /*
+    *  创建Cluster对象，该对象的核心属性是ClientProtocol：它是mr client与yarn（集群模式下）交互的媒介
+    *  创建Cluster对象时完成的任务是：根据配置文件的mapreduce.framework.name值生成对应的ClientProtocol和
+    *  ClientProtocolProvider实例 */
     connect();
+    /**
+     * 简单低获取JobSubmitter实例，并将FileSystem和ClientProtocol传递过去
+     */
     final JobSubmitter submitter = 
         getJobSubmitter(cluster.getFileSystem(), cluster.getClient());
+    /**
+     * 通过JobSubmitter来提交任务
+     */
     status = ugi.doAs(new PrivilegedExceptionAction<JobStatus>() {
       public JobStatus run() throws IOException, InterruptedException, 
       ClassNotFoundException {
@@ -1586,6 +1596,8 @@ public class Job extends JobContextImpl implements JobContext, AutoCloseable {
    * @return true if the job succeeded
    * @throws IOException thrown if the communication with the 
    *         <code>JobTracker</code> is lost
+   *
+   *  用户MR程序入口
    */
   public boolean waitForCompletion(boolean verbose
                                    ) throws IOException, InterruptedException,

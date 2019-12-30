@@ -50,7 +50,11 @@ import org.apache.hadoop.security.token.TokenInfo;
  * Protocol that a JobClient and the central JobTracker use to communicate.  The
  * JobClient can use these methods to submit a Job for execution, and learn about
  * the current system status.
- */ 
+ *
+ * 两个子类：
+ * YARNRunner: 集群模式下与yarn交互
+ * LocalJobRunner: 本地模式下
+ */
 @KerberosInfo(
     serverPrincipal = JTConfig.JT_USER_NAME)
 @TokenInfo(DelegationTokenSelector.class)

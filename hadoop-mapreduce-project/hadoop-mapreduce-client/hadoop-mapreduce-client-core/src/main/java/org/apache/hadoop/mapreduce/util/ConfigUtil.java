@@ -37,6 +37,7 @@ public class ConfigUtil {
 
   /**
    * Adds all the deprecated keys. Loads mapred-default.xml and mapred-site.xml
+   * 添加配置文件
    */
   public static void loadResources() {
     addDeprecatedKeys();

@@ -143,8 +143,15 @@ class JobSubmitter {
     checkSpecs(job);
 
     Configuration conf = job.getConfiguration();
+    //？？
     addMRFrameworkToDistributedCache(conf);
 
+      /**
+       * 取作业执行时阶段区域路径jobStagingArea
+       * 取参数yarn.app.mapreduce.am.staging-dir，参数未配置默认为/tmp/hadoop-yarn/staging
+       * 然后后面是/提交作业用户名/.staging
+       *
+       */
     Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster, conf);
     //configure the command line options correctly on the submitting dfs
     InetAddress ip = InetAddress.getLocalHost();
@@ -436,6 +443,9 @@ class JobSubmitter {
   @SuppressWarnings("deprecation")
   private static void addMRFrameworkToDistributedCache(Configuration conf)
       throws IOException {
+      /**
+       * MAPREDUCE_APPLICATION_FRAMEWORK_PATH默认为空，所以不会后面不会运行
+       */
     String framework =
         conf.get(MRJobConfig.MAPREDUCE_APPLICATION_FRAMEWORK_PATH, "");
     if (!framework.isEmpty()) {

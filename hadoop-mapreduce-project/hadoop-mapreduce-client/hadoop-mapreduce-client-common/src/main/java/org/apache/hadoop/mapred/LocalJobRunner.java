@@ -76,6 +76,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Implements MapReduce locally, in-process, for debugging. */
+
+/**
+ * 本地模式下，完成任务提交等
+ * 集群模式：{@link org.apache.hadoop.mapred.YARNRunner}
+ */
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
 public class LocalJobRunner implements ClientProtocol {

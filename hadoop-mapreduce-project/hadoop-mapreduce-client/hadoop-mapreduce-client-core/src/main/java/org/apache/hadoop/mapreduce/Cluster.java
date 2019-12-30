@@ -56,7 +56,13 @@ public class Cluster {
   @InterfaceStability.Evolving
   public enum JobTrackerStatus {INITIALIZING, RUNNING};
 
+  /**
+   * 用于根据配置内容判断是否生成对应的ClientProtocol实例
+   */
   private ClientProtocolProvider clientProtocolProvider;
+  /**
+   * 核心属性：是mr client与yarn（集群模式下）交互的媒介
+   */
   private ClientProtocol client;
   private UserGroupInformation ugi;
   private Configuration conf;
@@ -67,11 +73,18 @@ public class Cluster {
   private static final Logger LOG =
       LoggerFactory.getLogger(Cluster.class);
 
+  /**
+   * ServiceLoader：加载资源目录中/META-INF下的jar文件，获取相应的类实例（一般是子类）
+   * 这个有点类似于spring 里的@service自动装载bean
+   */
   @VisibleForTesting
   static Iterable<ClientProtocolProvider> frameworkLoader =
       ServiceLoader.load(ClientProtocolProvider.class);
   private volatile List<ClientProtocolProvider> providerList = null;
 
+  /**
+   * 读/META-INF下的配置，生成ClientProtocolProvider实例
+   */
   private void initProviderList() {
     if (providerList == null) {
       synchronized (frameworkLoader) {
@@ -94,6 +107,9 @@ public class Cluster {
     }
   }
 
+  /**
+   * 添加配置文件
+   */
   static {
     ConfigUtil.loadResources();
   }
@@ -102,16 +118,36 @@ public class Cluster {
     this(null, conf);
   }
 
+  /**
+   * 先是static静态段加载配置文件，以确定是本地模式还是集群模式、集群模式的yarn ip等等
+   * 然后调用{ initialize}函数初始化
+   *
+   * @param jobTrackAddr
+   * @param conf
+   * @throws IOException
+   */
   public Cluster(InetSocketAddress jobTrackAddr, Configuration conf) 
       throws IOException {
     this.conf = conf;
     this.ugi = UserGroupInformation.getCurrentUser();
     initialize(jobTrackAddr, conf);
   }
-  
+
+  /**
+   * 获取ClientProtocol和ClientProtocolProvider的实例
+   * @param jobTrackAddr
+   * @param conf
+   * @throws IOException
+   */
   private void initialize(InetSocketAddress jobTrackAddr, Configuration conf)
       throws IOException {
 
+    /**
+     * 获取ClientProtocolProvider类的实例（可能有多个，只要配置在了/META-INF/services/目录下）
+     * frameworkLoader 一般有两个ClientProtocolProvider类的子类实例：YarnClientProtocolProvider和LocalClientProtocolProvider
+     * 每个Provider依次尝试，看conf中的mapreduce.framework.name对应的值是否是当前Provider对应的值；如果是；返回对应的
+     * ClientProtocol实例，然后break遍历；否则继续遍历frameworkLoader直到找到对应的ClientProtocolProvider。
+     */
     initProviderList();
     final IOException initEx = new IOException(
         "Cannot initialize Cluster. Please check your configuration for "
@@ -121,6 +157,9 @@ public class Cluster {
       LOG.info(
           "Initializing cluster for Job Tracker=" + jobTrackAddr.toString());
     }
+    /**
+     * 虽然是list，但是只会使用一个
+     */
     for (ClientProtocolProvider provider : providerList) {
       LOG.debug("Trying ClientProtocolProvider : "
           + provider.getClass().getName());

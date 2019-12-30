@@ -92,7 +92,9 @@ import org.apache.hadoop.yarn.exceptions.YARNFeatureNotEnabledException;
 /**
  * <p>The protocol between clients and the <code>ResourceManager</code>
  * to submit/abort jobs and to get information on applications, cluster metrics,
- * nodes, queues and ACLs.</p> 
+ * nodes, queues and ACLs.</p>
+ *
+ * yarn applications的通信接口
  */
 @Public
 @Stable

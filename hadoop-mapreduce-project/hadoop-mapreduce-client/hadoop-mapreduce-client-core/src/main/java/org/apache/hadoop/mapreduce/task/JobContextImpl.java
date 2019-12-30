@@ -78,6 +78,8 @@ public class JobContextImpl implements JobContext {
   /**
    * Return the configuration for the job.
    * @return the shared configuration object
+   *
+   *
    */
   public Configuration getConfiguration() {
     return conf;
