@@ -143,14 +143,17 @@ class JobSubmitter {
     checkSpecs(job);
 
     Configuration conf = job.getConfiguration();
-    //？？
+      /**
+       *"mapreduce.application.framework.path"配置默认为空，所以不会有任何操作
+       */
     addMRFrameworkToDistributedCache(conf);
 
       /**
-       * 取作业执行时阶段区域路径jobStagingArea
+       * 取作业执行时阶段暂存目录路径jobStagingArea
        * 取参数yarn.app.mapreduce.am.staging-dir，参数未配置默认为/tmp/hadoop-yarn/staging
        * 然后后面是/提交作业用户名/.staging
        *
+       * 这个路径是hdfs中的路径！！
        */
     Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster, conf);
     //configure the command line options correctly on the submitting dfs
@@ -161,8 +164,16 @@ class JobSubmitter {
       conf.set(MRJobConfig.JOB_SUBMITHOST,submitHostName);
       conf.set(MRJobConfig.JOB_SUBMITHOSTADDR,submitHostAddress);
     }
+    /**
+     * 生成application?
+     * 通过yarn client访问yarn server，获取application
+     * applicationId被用来生成job临时目录（hdfs上，所有node都能访问）
+     */
     JobID jobId = submitClient.getNewJobID();
     job.setJobID(jobId);
+    /**
+     * 作业提交目录=jobStagingArea/jobId
+     */
     Path submitJobDir = new Path(jobStagingArea, jobId.toString());
     JobStatus status = null;
     try {
@@ -174,9 +185,11 @@ class JobSubmitter {
       LOG.debug("Configuring job " + jobId + " with " + submitJobDir 
           + " as the submit dir");
       // get delegation token for the dir
+      // 获取路径的授权令牌
       TokenCache.obtainTokensForNamenodes(job.getCredentials(),
           new Path[] { submitJobDir }, conf);
-      
+
+      // 获取密钥和令牌，并将它们存储到令牌缓存TokenCache中
       populateTokenCache(conf, job.getCredentials());
 
       // generate a secret to authenticate shuffle transfers
@@ -197,7 +210,12 @@ class JobSubmitter {
         LOG.warn("Max job attempts set to 1 since encrypted intermediate" +
                 "data spill is enabled");
       }
-
+      /**
+       * 复制并且配置相关文件
+       *
+       * ! 只是创建了job的工作目录（与该job相关的资源文件都会放里面），
+       * ！后面才开始真正复制文件
+       */
       copyAndConfigureFiles(job, submitJobDir);
 
       Path submitJobFile = JobSubmissionFiles.getJobConfPath(submitJobDir);
@@ -249,6 +267,12 @@ class JobSubmitter {
       }
 
       // Write job file to submit dir
+        /**
+         * 复制文件到hdfs上的当前Job目录下，文件包括：
+         *     job.split
+         *     job.splitmetainfo
+         *     job.xml
+         */
       writeConf(conf, submitJobFile);
       
       //
